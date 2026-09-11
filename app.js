@@ -6,7 +6,14 @@ const appState = {
 
 const sidebarEl = document.getElementById('sidebar');
 
-// Render List View
+// Extract unique categories from data dynamically
+const categories = ['all', ...new Set(locationsData.map(item => item.category))];
+
+function setCategoryFilter(category) {
+  appState.activeCategory = category;
+  renderListView();
+}
+
 function renderListView() {
   appState.selectedId = null;
   updateURL(null);
@@ -19,7 +26,20 @@ function renderListView() {
     <div class="sidebar-header">
       <h2>Explore Locations</h2>
       <p>${filteredData.length} places found</p>
+      
+      <!-- Horizontal Filter Pills -->
+      <div class="filter-bar">
+        ${categories.map(cat => `
+          <button 
+            class="filter-pill ${appState.activeCategory === cat ? 'active' : ''}" 
+            data-category="${cat}"
+            onclick="setCategoryFilter(this.dataset.category)">
+            ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+          </button>
+        `).join('')}
+      </div>
     </div>
+
     <div class="card-list">
       ${filteredData.map(item => `
         <div class="card" onclick="selectLocation('${item.id}')">
@@ -30,6 +50,9 @@ function renderListView() {
       `).join('')}
     </div>
   `;
+
+  // Update map pins to match filtered dataset
+  renderMapMarkers(filteredData);
 }
 
 // Render Detail View
@@ -50,6 +73,9 @@ function renderDetailView(id) {
       <p class="description">${item.description}</p>
     </div>
   `;
+
+  // Update markers so active marker styling applies
+  renderMapMarkers(locationsData);
 
   // Center map on selected pin with offset for the sidebar
   if (window.map) {
@@ -78,6 +104,42 @@ function updateURL(id) {
   window.history.pushState({}, '', url);
 }
 
+// Store active markers so we can clear/update them on filter
+let currentMarkers = [];
+
+function renderMapMarkers(data) {
+  if (!window.map) return;
+
+  // Clear existing markers
+  currentMarkers.forEach(marker => marker.remove());
+  currentMarkers = [];
+
+  data.forEach(item => {
+    // Create custom marker DOM element
+    const el = document.createElement('div');
+    el.className = 'custom-marker';
+    el.dataset.id = item.id;
+
+    // Highlight marker if currently selected
+    if (appState.selectedId === item.id) {
+      el.classList.add('active-marker');
+    }
+
+    // Bind click event to state controller
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectLocation(item.id);
+    });
+
+    // Create and add Mapbox marker
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat(item.coordinates)
+      .addTo(window.map);
+
+    currentMarkers.push(marker);
+  });
+}
+
 // Initialize Controller and Check URL on Load
 function initSidebarController() {
   const params = new URLSearchParams(window.location.search);
@@ -87,6 +149,15 @@ function initSidebarController() {
     renderDetailView(initialFocusId);
   } else {
     renderListView();
+  }
+
+  // Bind map blank-space click safely
+  if (window.map) {
+    window.map.on('click', () => {
+      if (appState.selectedId) {
+        renderListView();
+      }
+    });
   }
 
   // Handle browser back/forward buttons

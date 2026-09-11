@@ -6,6 +6,8 @@
   <title>Interactive Map App</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
+  <!-- Add missing CSS stylesheet link -->
+  <link rel="stylesheet" href="styles.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; height: 100vh; overflow: hidden; }
@@ -34,15 +36,20 @@
 
   <script>
     mapboxgl.accessToken = 'pk.eyJ1Ijoibm9sZW5waHlhIiwiYSI6ImNtOGk3bXB1MzBhM2Qyc292ZjZrZ2tjMHMifQ.ZItrPCguE2g3w99InSdzLQ';
-    const map = new mapboxgl.Map({
+    
+    // Assign map instance to window.map so app.js can reference it
+    window.map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-73.985, 40.748],
-      zoom: 12
+      center: [-76.612, 39.290], // Adjusted map center to Baltimore test pins
+      zoom: 13
     });
 
-    // Account for sidebar offset when centering pins
-    map.easeTo({ padding: { left: 100 } });
+    window.map.easeTo({ padding: { left: 100 } });
   </script>
+
+  <!-- Add missing JavaScript files -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
